@@ -1,0 +1,143 @@
+<!--#!chrome-cli reload && echo 
+-->
+<!DOCTYPE html>
+<html ng-app="App">
+	<head>
+		<title>
+			Center-Loaded Whip (λ/4) Antenna Desgin Tool
+		</title>
+		<meta charset="utf-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+
+		<script type="text/javascript" src="assets/jquery-2.1.1.js"></script>
+		<link rel="stylesheet" href="assets/bootstrap/css/bootstrap.css">
+		<link rel="stylesheet" href="assets/bootstrap/css/bootstrap-theme.css">
+		<script src="assets/angular.js"></script>
+		<script src="assets/underscore.js"></script>
+		<script src="assets/keyString.js"></script>
+		<script src="assets/ui-bootstrap-tpls-0.11.0.js"></script>
+		<script src="script.js"></script>
+
+		<link rev="made" href="mailto:cho45@lowreal.net"/>
+		<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon"/>
+
+		<!--[if lt IE 9]>
+		<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+		<![endif]-->
+
+
+		<style>
+			body {
+				padding: 20px 0;
+			}
+		</style>
+	</head>
+	<body ng-controller="MainCtrl">
+		<div class="container">
+			<h1 class="page-header">
+				Center-Loaded Whip (λ/4) Antenna Desgin Tool
+			</h1>
+			<form class="form-horizontal">
+				<fieldset>
+					<legend>Design</legend>
+					<div class="form-group">
+						<label class="col-sm-3 control-label">Freq.</label>
+						<div class="col-sm-3 input-group">
+							<input type="number" class="form-control" ng-model="input.frequency" value="7.0" step="0.1"/>
+							<span class="input-group-addon">MHz</span>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label">Top Element</label>
+						<div class="col-sm-3 input-group">
+							<input type="number" class="form-control" ng-model="input.topElement" value="1" step="0.1"/>
+							<span class="input-group-addon">m</span>
+						</div>
+						<div class="col-sm-offset-3 col-sm-6 input-group">
+							Top element should be longer than 30% of whole length. (Current: {{ input.topElement / (input.topElement + input.bottomElement) * 100 | number: 1 }}%)
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label">Bottom Element</label>
+						<div class="col-sm-3 input-group">
+							<input type="number" class="form-control" ng-model="input.bottomElement" value="1" step="0.1"/>
+							<span class="input-group-addon">m</span>
+						</div>
+						<div class="col-sm-offset-3 col-sm-6 input-group">
+							Whole element length must be shorter than λ/4.
+							(Current: λ/{{ (300 / input.frequency)  / (input.topElement + input.bottomElement) | number: 2 }}
+							<abrr title="fractional shortening">FS</abrr>: {{ (input.topElement + input.bottomElement) / (300 / input.frequency / 4) * 100 | number: 1 }}%
+							)
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label">Element Diameter</label>
+						<div class="col-sm-3 input-group">
+							<input type="number" class="form-control" ng-model="input.elementDiameter" value="1" step="0.1"/>
+							<span class="input-group-addon">mm</span>
+						</div>
+					</div>
+				</fieldset>
+				<fieldset>
+					<legend>Coil</legend>
+					<div class="form-group">
+						<label class="col-sm-3 control-label">Coil Diameter</label>
+						<div class="col-sm-3 input-group">
+							<span class="input-group-addon">φ</span>
+							<input type="number" class="form-control" ng-model="input.coilDiameter" value="50" step="1"/>
+							<span class="input-group-addon">mm</span>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label">Coiling Spacing</label>
+						<div class="col-sm-3 input-group">
+							<input type="number" class="form-control" ng-model="input.coilingSpacing" value="0" step="1"/>
+							<span class="input-group-addon">mm</span>
+						</div>
+						<div class="col-sm-offset-3 col-sm-6 input-group">
+							For close coiling: Set diameter of the coil conductor
+						</div>
+					</div>
+				</fieldset>
+				<fieldset>
+					<legend>Results</legend>
+					<div class="form-group">
+						<label class="col-sm-3 control-label">Lambda</label>
+						<div class="col-sm-3 input-group">
+							<p class="form-control-static">{{ 300 / input.frequency | number: 0 }} m (λ/4 = {{ 300 / input.frequency / 4 }})</p>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label">Required Reactance</label>
+						<div class="col-sm-3 input-group">
+							<p class="form-control-static">{{ reactance | number: 0 }} Ω</p>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label">Required Inductance</label>
+						<div class="col-sm-3 input-group">
+							<p class="form-control-static">{{ inductance * 1e6 | number : 0 }} μH</p>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label">Coil Turns</label>
+						<div class="col-sm-3 input-group">
+							<p class="form-control-static">{{ coilTurns }} T ({{ coilInductance * 1e6 | number : 0 }} μH)</p>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label">Coil Length</label>
+						<div class="col-sm-3 input-group">
+							<p class="form-control-static">{{ coilLength * 1000 | number: 0 }} mm</p>
+						</div>
+					</div>
+				</fieldset>
+			</form>
+			<hr />
+			<div style="text-align: right">
+				Ref. 
+				<a href="http://www.amazon.co.jp/gp/product/4789810259?ie=UTF8&camp=1207&creative=8411&creativeASIN=4789810259&linkCode=shr&tag=nuso-22&qid=1410793844&sr=8-1&keywords=%E3%82%A2%E3%83%B3%E3%83%86%E3%83%8A%E3%83%8F%E3%83%B3%E3%83%89%E3%83%96%E3%83%83%E3%82%AF">アンテナ・ハンドブック</a>
+			</div>
+		</div>
+	</body>
+</html>
